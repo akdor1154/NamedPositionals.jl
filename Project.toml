@@ -1,0 +1,4 @@
+name = "NamedPositionals"
+uuid = "a436ac3e-0271-447f-a0a9-08c7bbbdab37"
+authors = ["Jarrad Whitaker <akdor1154@gmail.com>"]
+version = "0.1.0"
