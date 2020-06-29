@@ -56,4 +56,4 @@ If you get your argument names wrong, you'll get a warning printed:
 
 ## Known issues
 
-- None, yet. Can you find some?
+- You will get confusing warnings and stuff if you omit your separator / trailing semi. I need to catch when this happens and handle it properly
