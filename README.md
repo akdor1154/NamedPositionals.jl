@@ -53,3 +53,7 @@ If you get your argument names wrong, you'll get a warning printed:
 - Allowing the caller to re-order arguments: nope. Argument order is hugely important in Julia, it shouldn't be hidden or abstracted. Hiding this is potentially a huge footgun, and would yield major WTFs from anybody who ever reads your code.
 
 - Allowing the caller to omit the trailing semi / separating semi between pos and kwargs: nope. This is required for unambiguous call parsing. Requiring it also makes the separation between positional and kwargs visible, which IMO is again useful for code readability, given the distinction between these is so important to be able to use Julia without head-scratching.
+
+## Known issues
+
+- Breaks on functions with required kwargs.
