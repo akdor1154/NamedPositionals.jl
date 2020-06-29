@@ -56,4 +56,4 @@ If you get your argument names wrong, you'll get a warning printed:
 
 ## Known issues
 
-- Breaks on functions with required kwargs.
+- None, yet. Can you find some?

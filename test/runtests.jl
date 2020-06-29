@@ -1,6 +1,6 @@
 
 using NamedPositionals
-import Test: @testset, @test, @test_logs, @test_broken
+import Test: @testset, @test, @test_logs, @test_broken, @test_throws
 
 @testset "Result tests" begin
 
@@ -47,7 +47,7 @@ import Test: @testset, @test, @test_logs, @test_broken
             return a*b+c
         end
 
-        @test_broken (@np testFn(a=1,b=2;c=10)) == 12
+        @test (@np testFn(a=1,b=2;c=10)) == 12
     end
 
 
@@ -62,6 +62,24 @@ end
     @test_logs (:warn, Regex("`aa` should have been `a`")) @np testFn(aa=1,1;)
     @test_logs @np testFn(a=1,b=1;)
     @test_logs @np testFn(1,1;)
+end
+
+@testset "Semi usage tests" begin
+    
+
+    function testFn(a::Int, b::Int; c::Int=0)
+        return a*b + c
+    end
+
+    # TODO: catch this better and give a proper exception
+    # missing trailing semi
+    @test_throws ErrorException (@np testFn(1,2)) == 5
+
+    # TODO: catch this better and give a proper exception
+    # TODO: don't log mismatch warning here
+    # missing separator semi
+    @test_throws MethodError (@np testFn(1,2,c=1)) == 2
+
 end
 
 @testset "Single arg evaluation" begin

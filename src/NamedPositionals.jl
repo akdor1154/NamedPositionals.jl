@@ -26,9 +26,11 @@ function findNamedPositionalMismatches(userCall::NamedPositionalCall) :: Array{T
     local resolvedMethod = first(possibleMethods)
     local methodParamNames = resolvedMethodCode.slotnames[2:end]
 
-    if length(methodParamNames) != length(passedNames)
-        error("method param names $(methodParamNames) is a diff length from $(passedNames). This should never happen.")
-    end
+    # this is not true for methods like fn(a,b;c) with mandatory
+    # kwargs. We will rely on zip() later to ignore the kwargs.
+    # if length(methodParamNames) != length(passedNames)
+    #     error("method param names $(methodParamNames) is a diff length from $(passedNames). This should never happen.")
+    # end
 
     local mismatches = (
         (i, passed, wanted)
@@ -79,24 +81,6 @@ macro np(callExpr::Expr)
         global $argsCheckedVar
         if $argsCheckedVar == false
 
-            # local evaluatedArgsVales = [
-            #     $([
-            #         let 
-            #             evaluated =
-            #                 if v isa Symbol || v isa Expr
-            #                     # user passed a variable or expr
-            #                     println("got expr")
-            #                     v
-            #                 elseif v isa QuoteNode
-            #                     # user actually passed a symbol
-            #                     esc(v.value)
-            #                 else
-            #                     v
-            #                 end;
-            #             evaluated
-            #         end
-            #         for (k,v) in namedParamKVs
-            #     ]...)]
             local kws = [$((QuoteNode(k) for (k,v) in namedParamKVs)...)]
             local argValues = [$((esc(v) for (k,v) in namedParamKVs)...)]
             local evaluatedArgs :: Array{NamedPositionalArgument} = [
