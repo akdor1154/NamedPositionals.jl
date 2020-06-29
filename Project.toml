@@ -2,3 +2,6 @@ name = "NamedPositionals"
 uuid = "a436ac3e-0271-447f-a0a9-08c7bbbdab37"
 authors = ["Jarrad Whitaker <akdor1154@gmail.com>"]
 version = "0.1.0"
+
+[deps]
+Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"

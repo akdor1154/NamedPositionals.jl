@@ -1,6 +1,5 @@
 module NamedPositionals
 
-
 import Base.Meta
 import Logging
 
@@ -80,21 +79,28 @@ macro np(callExpr::Expr)
         global $argsCheckedVar
         if $argsCheckedVar == false
 
+            # local evaluatedArgsVales = [
+            #     $([
+            #         let 
+            #             evaluated =
+            #                 if v isa Symbol || v isa Expr
+            #                     # user passed a variable or expr
+            #                     println("got expr")
+            #                     v
+            #                 elseif v isa QuoteNode
+            #                     # user actually passed a symbol
+            #                     esc(v.value)
+            #                 else
+            #                     v
+            #                 end;
+            #             evaluated
+            #         end
+            #         for (k,v) in namedParamKVs
+            #     ]...)]
+            local kws = [$((QuoteNode(k) for (k,v) in namedParamKVs)...)]
+            local argValues = [$((esc(v) for (k,v) in namedParamKVs)...)]
             local evaluatedArgs :: Array{NamedPositionalArgument} = [
-                let 
-                    evaluated =
-                        if v isa Symbol || v isa Expr
-                            # user passed a variable or expr
-                            eval(v)
-                        elseif v isa QuoteNode
-                            # user actually passed a symbol
-                            v.value
-                        else
-                            v
-                        end;
-                    (k, evaluated)
-                end
-                for (k,v) in $namedParamKVs
+                kv for kv in zip(kws,argValues)
             ]
 
             local fn = $(esc(fnName))
@@ -109,6 +115,8 @@ macro np(callExpr::Expr)
 
             $argsCheckedVar = true
 
+            # construct a new arg call that uses our pre-evaluated
+            # arguments from above (to avoid evaluating args twice)
             local preEvalArgsCall = $(Expr(
                 :call,
                 (esc(fnName)),
@@ -122,22 +130,6 @@ macro np(callExpr::Expr)
     end
 end
 
+export @np
+
 end # module
-
-
-function testFn(a::Int, b::Int; c::Int=0)
-    return a*b + c
-end
-
-t = 2
-
-println(NamedPositionals.@np testFn(1,2; c=3))
-
-println(NamedPositionals.@np testFn(b=1,2; c=3))
-
-function callTwice()
-    NamedPositionals.@np testFn(b=1,2; c=3)
-end
-
-println(callTwice())
-println(callTwice())
