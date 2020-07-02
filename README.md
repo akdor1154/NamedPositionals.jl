@@ -1,7 +1,5 @@
 # NamedPositionals.jl
 
-**Alpha software. There are still a couple of edge cases.**
-
 Allows you to call Julia functions with named positional parameters:
 
 ```jl
@@ -56,4 +54,4 @@ If you get your argument names wrong, you'll get a warning printed:
 
 ## Known issues
 
-- You will get confusing warnings and stuff if you omit your separator / trailing semi. I need to catch when this happens and handle it properly
+- None, yet. Probably issues when using with wrapped functions and stuff.
