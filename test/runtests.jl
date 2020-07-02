@@ -39,6 +39,18 @@ end
 
     end
 
+    @testset "Multi-line" begin
+        function testFn(a::Int, b::Int; c::Int=0)
+            return a*b + c
+        end
+
+        @test (@np testFn(
+            a=1,
+            b=2;
+            c=3
+        )) == 5
+    end
+
     @testset "expr arg evaluation" begin
 
         function testFn(a::Int, b::Int;)
