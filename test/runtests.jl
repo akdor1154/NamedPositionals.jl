@@ -1,6 +1,27 @@
 
 using NamedPositionals
+import Test
 import Test: @testset, @test, @test_logs, @test_broken, @test_throws
+
+macro require_error(expr::Expr)
+    orig_expr = Expr(:inert, expr)
+    quote
+        local error::Union{Some{<:Any}, Nothing} = nothing
+        try
+            $(esc(expr))
+        catch e
+            error = Some(e)
+        end
+        if error === nothing
+            Test.record(Test.get_testset(), Test.Fail(:test_throws_nothing, $orig_expr, Exception, nothing, $(QuoteNode(__source__))))
+            nothing
+        else
+            Test.record(Test.get_testset(), Test.Pass(:test_throws, nothing, nothing, something(error)))
+            something(error)
+        end
+    end
+end
+
 
 @testset "Result tests" begin
 
@@ -39,7 +60,7 @@ import Test: @testset, @test, @test_logs, @test_broken, @test_throws
 
         @test (@np testFn(1,2;)) == 2
         @test (@np testFn(a=1,b=2;)) == 2
-    
+
     end
 
     @testset "Required kwargs" begin
@@ -65,20 +86,37 @@ end
 end
 
 @testset "Semi usage tests" begin
-    
+
 
     function testFn(a::Int, b::Int; c::Int=0)
         return a*b + c
     end
 
-    # TODO: catch this better and give a proper exception
-    # missing trailing semi
-    @test_throws ErrorException (@np testFn(1,2)) == 5
+    let
+        # TODO: catch this better and give a proper exception
+        # missing trailing semi
+        argError = @require_error eval(quote
+            @np testFn(1,2)
+        end)
+
+        @test argError isa LoadError
+        @test argError.error isa ArgumentError
+        @test occursin(r"You need to provide a semi-colon", argError.error.msg)
+    end
 
     # TODO: catch this better and give a proper exception
     # TODO: don't log mismatch warning here
     # missing separator semi
-    @test_throws MethodError (@np testFn(1,2,c=1)) == 2
+
+    let
+        argError = @require_error eval(quote
+            @np testFn(1,2,c=1)
+        end)
+
+        @test argError isa LoadError
+        @test argError.error isa ArgumentError
+        @test occursin(r"You need to provide a semi-colon", argError.error.msg)
+    end
 
 end
 
@@ -89,7 +127,7 @@ end
     function testFn(a::Int, b::Int; c::Int=0)
         return a*b + c
     end
-    
+
     _count = 0
     function generate3AndCountCalls()
         _count = _count+1

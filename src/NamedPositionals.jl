@@ -11,7 +11,7 @@ struct NamedPositionalCall
 end
 
 function findNamedPositionalMismatches(userCall::NamedPositionalCall) :: Array{Tuple{Int, Symbol, Symbol}}
-    
+
     local passedNames = [k for (k,v) in userCall.args]
     local argTypes = [typeof(v) for (k, v) in userCall.args]
 
@@ -40,8 +40,17 @@ function findNamedPositionalMismatches(userCall::NamedPositionalCall) :: Array{T
 end
 
 macro np(callExpr::Expr)
-    @assert callExpr.head == :call
-    @assert callExpr.args[1] isa Symbol # disallow f()() for now!
+    if callExpr.head != :call
+        throw(ArgumentError("@np needs to be called on a single call expression! You passed $(callExpr)."))
+    end
+
+    if !(
+        length(callExpr.args) >= 2
+        && (callExpr.args[2] isa Expr)
+        && (callExpr.args[2].head == :parameters)
+    )
+        throw(ArgumentError("You need to provide a semi-colon to distinguish positional and kwargs, even if there are no kwargs. E.g. @np f(1,2;). You passed $(callExpr)."))
+    end
 
     namedParamKVs::Array{NamedPositionalArgument} = [
         begin
@@ -63,13 +72,12 @@ macro np(callExpr::Expr)
         callExpr.args[2],
         [v for (k,v) in namedParamKVs]...
     )
-    fnName = callExpr.args[1]
     callKWargs = callExpr.args[2]
 
     # we want to make sure each macro only gets its args checked once,
     # for performance.
     argsCheckedVarSym = gensym("NamedParameters_argsChecked")
-    __module__.eval( :($argsCheckedVarSym = false) ) 
+    __module__.eval( :($argsCheckedVarSym = false) )
     argsCheckedVar = esc(argsCheckedVarSym)
 
     # unsure why this is needed, see
@@ -81,13 +89,14 @@ macro np(callExpr::Expr)
         global $argsCheckedVar
         if $argsCheckedVar == false
 
+            local fn = $(esc(callExpr.args[1]))
+
             local kws = [$((QuoteNode(k) for (k,v) in namedParamKVs)...)]
             local argValues = [$((esc(v) for (k,v) in namedParamKVs)...)]
             local evaluatedArgs :: Array{NamedPositionalArgument} = [
                 kv for kv in zip(kws,argValues)
             ]
 
-            local fn = $(esc(fnName))
             local userCall = NamedPositionalCall(fn, evaluatedArgs)
             local mismatches = findNamedPositionalMismatches(userCall)
 
@@ -103,7 +112,7 @@ macro np(callExpr::Expr)
             # arguments from above (to avoid evaluating args twice)
             local preEvalArgsCall = $(Expr(
                 :call,
-                (esc(fnName)),
+                :(fn),
                 (esc(callKWargs)),
                 :((v for (k,v) in evaluatedArgs)...)
             ))
