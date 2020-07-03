@@ -84,12 +84,15 @@ workflows:
           matrix:
             parameters:
               julia_docker_tag: ["1.3", "1.4", "1.5"]
+          filters:
+            tags:
+              only: /^candidate_v\d+\.\d+\.\d+.*$/
       - register:
           julia_docker_tag: "1.4"
           requires:
             - test
           filters:
             tags:
-              only: /^candidate_v\d+.\d+.\d+.*$/
+              only: /^candidate_v\d+\.\d+\.\d+.*$/
             branches:
               ignore: /.*/
