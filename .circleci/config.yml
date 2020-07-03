@@ -101,4 +101,4 @@ workflows:
             tags:
               only: /^candidate_v\d+\.\d+\.\d+.*$/
             branches:
-              ignore: /.*/
+              only: /circleci-registrator/
