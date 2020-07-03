@@ -100,3 +100,5 @@ workflows:
           filters:
             tags:
               only: /^candidate_v\d+\.\d+\.\d+.*$/
+            branches:
+              ignore: /.*/
