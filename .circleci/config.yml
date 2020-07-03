@@ -97,6 +97,7 @@ workflows:
           julia_docker_tag: "1.4"
           requires:
             - test
+          context: Julia Libraries
           filters:
             tags:
               only: /^candidate_v\d+\.\d+\.\d+.*$/
