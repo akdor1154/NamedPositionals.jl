@@ -78,6 +78,7 @@ jobs:
     executor:
       name: publisher
     steps:
+      - checkout
       - run:
           name: register
           command: .circleci/registrator.sh
