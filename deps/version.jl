@@ -1,7 +1,5 @@
 using Pkg
 using ArgParse
-import GitHub
-using URIParser
 
 # version bump script because i don't like how PkgDev does branching.
 # todo: rewrite in python and move to separate package
@@ -21,8 +19,11 @@ function getArgs()
     @add_arg_table! s begin
         "version_type"
             range_tester = (s -> s ∈ versionTypes)
+            required = false
             help = "version_type, must be " * join(versionTypes, ", ", ", or ")
         "--no-act", "-n"
+            action = :store_true
+        "--no-bump"
             action = :store_true
     end
 
@@ -76,89 +77,47 @@ function updateVersionInTomlNoAct(toml, tomlpath::String, wantedVersion:: Versio
     println("Would update version from $(toml["version"]) -> $(wantedVersion)")
 end
 
-function commitAndPushMasterAct(newVersion, tomlpath::String) :: String
+function commitAct(newVersion, tomlpath::String) :: String
     run(`git commit -m "v$(newVersion)" $(tomlpath)`)
-    run(`git push`)
-
-    headHash = read(`git rev-parse HEAD`, String) |> strip
-    return headHash
 end
 
-function commitAndPushMasterNoAct(newVersion, tomlpath::String) :: String
-    println("Would commit and push master now.")
-
-    headHash = read(`git rev-parse HEAD`, String) |> strip
-    return headHash
+function commitNoAct(newVersion, tomlpath::String) :: String
+    println("Would commit now.")
 end
 
-function authGithub() :: GitHub.Authorization
-    githubToken = 
-        try
-            read(`keyring get github api`, String) |> chomp
-        catch
-            error(
-                "Could\'t read github token. Go to \n" *
-                "https://github.com/settings/tokens/new ,\n" *
-                "and then set your token using" *
-                "`keyring set github api`."
-            )
-        end
-    GitHub.authenticate(githubToken)
+function tagAct(newVersion)
+    run(`git tag -am "v$(newVersion) candidate" "candidate_v$(newVersion)"`)
 end
 
-function getRepo(auth::GitHub.Authorization) :: GitHub.Repo
-    remote:: String = read(`git remote get-url origin`, String) |> strip
-    path = let
-        if occursin("://", remote)
-            uri = URI(remote)
-            uri.path
-        else
-            sshName, path = split(remote, ":"; limit=2)
-            path
-        end
-    end
-    pathArray = split(path, "/")
-
-    user = pathArray[end-1]
-    repo = pathArray[end]
-    if endswith(repo, ".git")
-        repo = repo[1:end-length(".git")]
-    end
-
-    fullName = "$(user)/$(repo)"
-    ghRepo = GitHub.repo(fullName; auth=auth)
-end
-
-function _addRegistratorComment(auth::GitHub.Authorization, repo::GitHub.Repo, hash::String, body::String)
-    comment = GitHub.create_comment(repo, hash, :commit; auth=auth, params=Dict("body" => body))
-end
-
-function addRegistratorCommentAct(auth::GitHub.Authorization, repo::GitHub.Repo, hash::String)
-    comment = _addRegistratorComment(auth, repo, hash, "@JuliaRegistrator register")
-    println(comment)
-end
-
-function addRegistratorCommentNoAct(repo::GitHub.Repo, hash::String)
-    comment = _addRegistratorComment(auth, repo, hash, "_JuliaRegistrator register test")
-    println(comment)
+function tagNoAct(newVersion)
+    println(`git tag -am "v$(newVersion) candidate" "candidate_v$(newVersion)"`)
 end
 
 function main()
     args = getArgs()
 
-    updateVersion = (args[:no_act]) ? updateVersionInTomlNoAct : updateVersionInTomlAct
-    commitAndPushMaster = (args[:no_act]) ? commitAndPushMasterNoAct : commitAndPushMasterAct
-    addRegistratorComment = (args[:no_act]) ? addRegistratorCommentNoAct : addRegistratorCommentAct
-    auth = authGithub()
-    repo = getRepo(auth)
+    act::Bool = !args[:no_act]
+    bump::Bool = !args[:no_bump]
 
-    versionType = convert(VersionComponent, args[:version_type])
+    updateVersion = (act) ? updateVersionInTomlAct : updateVersionInTomlNoAct
+    commit = (act) ? commitAct : commitNoAct
+    tag = (act) ? tagAct : tagNoAct
+
     toml, tomlpath = getTomlAndEnsureRoot()
-    ensureMaster()
-    newVersion = getWantedVersion(versionType, toml)
-    updateVersion(toml, tomlpath, newVersion)
-    hash = commitAndPushMaster(newVersion, tomlpath)
-    addRegistratorComment(auth, repo, hash)
+    
+    local newVersion::VersionNumber
+    if bump
+        versionType = convert(VersionComponent, args[:version_type])
+        ensureMaster()
+        newVersion = getWantedVersion(versionType, toml)
+        updateVersion(toml, tomlpath, newVersion)
+        commit(newVersion, tomlpath)
+    else
+        newVersion = VersionNumber(toml["version"])
+    end
+
+    tag(newVersion)
+
 end
 
 # util
