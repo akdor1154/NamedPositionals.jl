@@ -8,6 +8,6 @@ token="${GITHUB_COMMENTER_TOKEN}"
 
 curl -fL \
     -u :"${token}" \
-    -d '{"body": "[CircleCI-triggered]\nJuliaRegistrator register"}' \
+    -d '{"body": "[CircleCI-triggered]\n@JuliaRegistrator register"}' \
     -X POST \
     "https://api.github.com/repos/${repoPath}/commits/${hash}/comments"
