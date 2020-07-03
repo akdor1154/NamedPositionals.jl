@@ -10,7 +10,7 @@ executors:
       - image: julia:<< parameters.julia_docker_tag >>
   publisher:
     docker:
-      - image: cimg/base:2020.01
+      - image: cimg/base:stable
 
 jobs:
   test:
