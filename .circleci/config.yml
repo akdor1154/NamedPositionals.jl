@@ -90,6 +90,6 @@ workflows:
             - test
           filters:
             tags:
-              only: /^candidate_v\d+.\d+.\d+/
+              only: /^candidate_v\d+.\d+.\d+.*$/
             branches:
               ignore: /.*/
