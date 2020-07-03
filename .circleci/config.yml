@@ -8,6 +8,9 @@ executors:
         type: string
     docker:
       - image: julia:<< parameters.julia_docker_tag >>
+  publisher:
+    docker:
+      - image: cimg/base:latest
 
 jobs:
   test:
@@ -72,12 +75,8 @@ jobs:
             '
 
   register:
-    parameters:
-      julia_docker_tag:
-        type: string
     executor:
-      name: julia_docker
-      julia_docker_tag: << parameters.julia_docker_tag >>
+      name: publisher
     steps:
       - run:
           name: register
@@ -94,7 +93,6 @@ workflows:
             tags:
               only: /^candidate_v\d+\.\d+\.\d+.*$/
       - register:
-          julia_docker_tag: "1.4"
           requires:
             - test
           context: Julia Libraries
