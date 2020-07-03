@@ -18,8 +18,12 @@ jobs:
       name: julia_docker
       julia_docker_tag: << parameters.julia_docker_tag >>
     steps:
-      - apt update
-      - apt install ssh git
+      - run:
+          name: Install git and ssh
+          command: |
+            apt update
+            apt install ssh git
+
       - checkout
 
       - restore_cache:
