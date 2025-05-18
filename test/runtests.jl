@@ -169,3 +169,12 @@ end
     @test_logs callTestFn2()
 
 end
+
+@testset "No implicit conversion" begin
+    # test for issue
+    # https://github.com/akdor1154/NamedPositionals.jl/issues/2
+
+    testAdd(n::Integer, r::Real) = n + r
+
+    (@np testAdd(n=42, r=3.14;)) == 45.14
+end

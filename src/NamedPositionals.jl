@@ -92,7 +92,7 @@ macro np(callExpr::Expr)
             local fn = $(esc(callExpr.args[1]))
 
             local kws = [$((QuoteNode(k) for (k,v) in namedParamKVs)...)]
-            local argValues = [$((esc(v) for (k,v) in namedParamKVs)...)]
+            local argValues = Any[$((esc(v) for (k,v) in namedParamKVs)...)]
             local evaluatedArgs :: Array{NamedPositionalArgument} = [
                 kv for kv in zip(kws,argValues)
             ]
