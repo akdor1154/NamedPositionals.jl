@@ -169,3 +169,9 @@ end
     @test_logs callTestFn2()
 
 end
+
+@testset "No implicit conversion" begin
+    testAdd(n::Integer, r::Real) = n + r
+
+    (@np testAdd(n=42, r=3.14;)) == 45.14
+end
